@@ -1,0 +1,15 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    histogram (0.2.4.1)
+    random_bell (0.1.1)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  histogram
+  random_bell
+
+BUNDLED WITH
+   1.10.3
