@@ -3,32 +3,18 @@ require "./indivisual.rb"
 require 'histogram/array'
 
 class SelectionRule
-  # 個体が生まれたときのポイント
-  POINT_DEFAULT = 0
-  # 
-  POINT_WIN = 100
-  POINT_LOSE = -100
-  POINT_ENDURE = -10
-
   class << self
-    def main
+    def main( indiv_count: 100, step_count: 1000 )
       # 個体数=100
-      100.times do |i|
+      indiv_count.times do |i|
         Indivisual.new( name: i )
       end
 
-      # puts "-------------"
-      # puts "total: #{Species.count}"
-      # puts "hawk: " + Species.count{|i| i.strategy == :hawk}.to_s +
-      #   ", dove: " + Species.count{|i| i.strategy == :dove}.to_s
-      # puts "power average: " + Species.avg(&:power).to_s
-      # puts "point average: " + Species.avg(&:point).to_s
-      # puts "center distance average: " + Species.avg(&:center_distance).to_s
       print_snapshot
 
       print_result
 
-      300.times do |i|
+      step_count.times do |i|
         Species.bruteforce do |indiv1, indiv2|
           if indiv1.in?( indiv2 )
             Indivisual.conbat!( indiv1, indiv2 )
@@ -38,14 +24,6 @@ class SelectionRule
           indiv.step!
         end
         print_snapshot(i)
-        # puts "--- Step over... ---"
-        # puts "total: #{Species.count}"
-        # puts "hawk: " + Species.count{|i| i.strategy == :hawk}.to_s +
-        #   ", dove: " + Species.count{|i| i.strategy == :dove}.to_s
-        # puts "power average: " + Species.avg(&:power).to_s
-        # puts "point average: " + Species.avg(&:point).to_s
-        # puts "gravity average: " + Species.avg(&:gravity).to_s
-        # puts "center distance average: " + Species.avg(&:center_distance).to_s
       end
 
       # Species.each do |indiv|
@@ -61,16 +39,20 @@ class SelectionRule
         total: Species.count,
         hawk: Species.count{|i| i.strategy == :hawk}.to_s,
         dove: Species.count{|i| i.strategy == :dove}.to_s,
-        power: Species.avg(&:power).to_s,
-        center_distance: Species.avg(&:center_distance).to_s
+        power: Species.avg(&:power).round(2).to_s,
+        center_distance: Species.avg(&:center_distance).round(2).to_s,
+        max_territory: Species.avg(&:max_territory).round(2).to_s,
+        life: Species.avg(&:life).round(2).to_s,
       }
       puts data.to_json
     end
 
     def print_result
-      print_easy_histogram( :center_distance, dist:8, min:0, max: 3000 )
+      print_easy_histogram( :center_distance, dist:8, min:0, max: 3500 )
       print_gene_histogram( :gravity )
       print_gene_histogram( :power )
+      print_gene_histogram( :max_territory )
+      print_gene_histogram( :life )
     end
 
     def print_gene_histogram( property )
@@ -97,7 +79,7 @@ class SelectionRule
       
       histogram.each do |g|
         label = "%4d.2" % g[0].round(2)
-        score = '*' * (g[1].to_f / 2.0)
+        score = '*' * (g[1].to_f / 3.0)
         puts "#{label}: #{score}"
       end
     end

@@ -16,26 +16,25 @@ class Indivisual < Species
   autoload :Power, File.expand_path('../indivisual/power', __FILE__)
   autoload :Reach, File.expand_path('../indivisual/reach', __FILE__)
   autoload :Gravity, File.expand_path('../indivisual/gravity', __FILE__)
+  autoload :MaxTerritory, File.expand_path('../indivisual/max_territory', __FILE__)
+  autoload :Life, File.expand_path('../indivisual/life', __FILE__)
 
   # stock
   DEFAULT_POINT = 0
 
-  MAX_POWER = 5.0
-
-  # 1個体のなわばりの半径
-  # RAD_TERRITORY = 80.0
-
-  # 1生のうちに経るステップ数
-  DEFAULT_LIFE = 50
-
   # 平均移動距離
-  DISTANCE_AVG_MOVE = 65.0
+  DISTANCE_AVG_MOVE = 300.0
 
-  attr_reader :personality, :power, :reach, :gravity
-  attr_reader :name, :pos, :velocity, :life
+  # 最低限保障されるなわばり
+  SAFE_TERRITORY = 30.0
+
+  attr_reader :personality, :power, :reach, :gravity, :max_territory, :life
+  attr_reader :name, :pos, :velocity, :current_life, :current_territory
   attr_accessor :conbat_count, :birth_count
   attr_reader :lost_point, :impact_velocity
   attr_accessor :point
+
+  attr_accessor :win_log, :lose_log, :step_log, :birth_log
 
   class << self
     def destination_delta( reach=nil, direction=nil )
@@ -51,12 +50,12 @@ class Indivisual < Species
 
       if indiv1.strategy == :hawk && indiv2.strategy == :hawk
         # powerによって勝敗の確率が決まる
-        p = 0.5 + (((indiv1.power - indiv2.power) / MAX_POWER) * 0.4)
+        p = 0.5 + (((indiv1.power - indiv2.power) / Indivisual::Power::MAX) * 0.4)
         if Random.new.rand(1.0) <= p
           indiv1.win!( 100 )
-          indiv2.lose!( 20 )
+          indiv2.lose!( 35 )
         else
-          indiv1.lose!( 20 )
+          indiv1.lose!( 35 )
           indiv2.win!( 100 )
         end
       elsif indiv1.strategy == :hawk && indiv2.strategy == :dove
@@ -67,7 +66,7 @@ class Indivisual < Species
         indiv2.win!( 100 )
       elsif indiv1.strategy == :dove && indiv2.strategy == :dove
         # powerによって勝敗の確率が決まる
-        p = 0.5 + (((indiv1.power - indiv2.power) / MAX_POWER) * 0.4)
+        p = 0.5 + (((indiv1.power - indiv2.power) / Indivisual::Power::MAX) * 0.4)
         if Random.new.rand(1.0) <= p
           indiv1.win!( 100-10 )
           indiv2.lose!( 1 )
@@ -81,21 +80,25 @@ class Indivisual < Species
 
   def initialize( **args )
     # Congenital
-    @gene     = args[:gene] || Gene.random
-    @personality  = Personality.new( @gene.personality )
-    @power        = Power.new( @gene.power )
-    @reach        = Reach.new( @gene.reach )
-    @gravity      = Gravity.new( @gene.gravity )
+    @gene           = args[:gene] || Gene.random
+    @personality    = Personality.new( @gene.personality )
+    @power          = Power.new( @gene.power )
+    @reach          = Reach.new( @gene.reach )
+    @gravity        = Gravity.new( @gene.gravity )
+    @max_territory  = MaxTerritory.new( @gene.max_territory )
+    @life           = Life.new( @gene.life )
 
     # Acquired
     @name         = args[:name] || object_id
     @pos          = self.class.destination_delta( @reach.value*3 )
     @velocity     = self.class.destination_delta( @reach.value )
     @point        = DEFAULT_POINT
-    @life         = DEFAULT_LIFE
+    @current_life = @life.value
+    @current_territory = 0
     @conbat_count = 0
     @birth_count  = 0
 
+    reset_log!
     reset_step!
 
     join_to_species
@@ -111,7 +114,7 @@ class Indivisual < Species
       strategy: strategy,
       power: power.to_s,
       point: point,
-      life: life,
+      current_life: current_life,
       conbat_count: conbat_count,
       birth_count: birth_count,
       neighbors: neighbors.length
@@ -119,7 +122,7 @@ class Indivisual < Species
   end
 
   def to_s
-    "#{name} #{strategy} power:#{power.to_s} point:#{point} life:#{life} " +
+    "#{name} #{strategy} power:#{power.to_s} point:#{point} current_life:#{current_life} " +
     "conbat:#{conbat_count} neighbors:#{neighbors.length}"
   end
 
@@ -131,6 +134,15 @@ class Indivisual < Species
 
   def center_distance
     pos.r
+  end
+
+  def territory
+    score = (current_territory >= 0) ? current_territory : 0
+    if score + SAFE_TERRITORY > max_territory.value
+      return max_territory.value
+    else
+      return score + SAFE_TERRITORY
+    end
   end
 
   # 移動します
@@ -147,17 +159,20 @@ class Indivisual < Species
   end
 
   def win!( bonus )
-    # @point += bonus
+    @win_log += 1
+    @current_territory += 1
   end
 
   def lose!( penalty )
+    @lose_log += 1
+    @current_territory -= 4
     @lost_point += penalty
     @impact_velocity += (gravity*0.5) * pos.normalize
   end
 
   def harvest!
     d = 1.001 ** (-1.0 * center_distance)
-    d = 100 * d
+    d = territory * d
     @point += d
   end
 
@@ -169,6 +184,8 @@ class Indivisual < Species
   end
 
   def birth!
+    @birth_log += 1
+    @current_territory += 1
     new_gene = @gene.generate!
     Indivisual.new( gene: new_gene )
     @point -= 800
@@ -176,13 +193,15 @@ class Indivisual < Species
   end
 
   def step!
-    @life -= 1 # Penalty of arrival
+    @step_log += 1
+    @current_territory += 3
+    @current_life -= 1 # Penalty of arrival
     if @lost_point > 0
-      @life -= 1 # Penalty of move
-      @life -= @lost_point # Penalty of defeat of conbat
+      @current_life -= 1 # Penalty of move
+      @current_life -= @lost_point # Penalty of defeat of conbat
     end
 
-    die! if @life <= 0
+    die! if @current_life <= 0
 
     harvest!
 
@@ -196,6 +215,13 @@ class Indivisual < Species
   def reset_step!
     @lost_point = 0
     @impact_velocity = Vector[0.0, 0.0]
+  end
+
+  def reset_log!
+    @win_log = 0
+    @lose_log = 0
+    @step_log = 0
+    @birth_log = 0
   end
 
   def neighbors

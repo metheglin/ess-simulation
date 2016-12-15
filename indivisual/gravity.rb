@@ -3,11 +3,11 @@
 class Indivisual < Species
   class Gravity < Numeric
 
-    SIGMA = 0.3
+    SIGMA = 0.5
     MIN = 0.0
     MAX = 10.0
     RANGE = MIN..MAX
-    MU_RANGE = (5.0-2.0)..(5.0+2.0)
+    MU_RANGE = (5.0-3.6)..(5.0+3.6)
 
     attr_reader :value
 
