@@ -5,7 +5,6 @@ require 'histogram/array'
 class SelectionRule
   class << self
     def main( indiv_count: 100, step_count: 1000 )
-      # 個体数=100
       indiv_count.times do |i|
         Indivisual.new( name: i )
       end
@@ -53,11 +52,12 @@ class SelectionRule
       print_gene_histogram( :power )
       print_gene_histogram( :max_territory )
       print_gene_histogram( :life )
+      print_gene_histogram( :personality )
     end
 
     def print_gene_histogram( property )
       klass_name = property.to_s.split(/[^[:alnum:]]+/).map(&:capitalize).join
-      klass   = Indivisual.const_get klass_name
+      klass   = Gene.const_get klass_name
       values = Species.map{|i| i.send(property).value}
       puts "=== #{property} ==="
       print_histogram( values, 8, klass::MIN, klass::MAX )

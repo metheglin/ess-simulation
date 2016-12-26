@@ -1,12 +1,12 @@
 # 最大まで広げられるなわばり半径です
-class Indivisual < Species
-  class Life < Numeric
+class Gene
+  class MaxTerritory < Numeric
 
-    SIGMA = 0.35
-    MIN = 60.0
-    MAX = 100.0
+    SIGMA = 0.4
+    MIN = 100.0
+    MAX = 250.0
     RANGE = MIN..MAX
-    MU_RANGE = (80-13)..(80+13)
+    MU_RANGE = (175-50)..(175+50)
 
     attr_reader :value
 

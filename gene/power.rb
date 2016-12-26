@@ -1,4 +1,4 @@
-class Indivisual < Species
+class Gene
   class Power < Numeric
 
     SIGMA = 0.45

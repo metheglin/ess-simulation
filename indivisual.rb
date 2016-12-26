@@ -12,12 +12,12 @@ require "./gene.rb"
 
 class Indivisual < Species
 
-  autoload :Personality, File.expand_path('../indivisual/personality', __FILE__) 
-  autoload :Power, File.expand_path('../indivisual/power', __FILE__)
-  autoload :Reach, File.expand_path('../indivisual/reach', __FILE__)
-  autoload :Gravity, File.expand_path('../indivisual/gravity', __FILE__)
-  autoload :MaxTerritory, File.expand_path('../indivisual/max_territory', __FILE__)
-  autoload :Life, File.expand_path('../indivisual/life', __FILE__)
+  # autoload :Personality, File.expand_path('../gene/personality', __FILE__) 
+  # autoload :Power, File.expand_path('../gene/power', __FILE__)
+  # autoload :Reach, File.expand_path('../gene/reach', __FILE__)
+  # autoload :Gravity, File.expand_path('../gene/gravity', __FILE__)
+  # autoload :MaxTerritory, File.expand_path('../gene/max_territory', __FILE__)
+  # autoload :Life, File.expand_path('../gene/life', __FILE__)
 
   # stock
   DEFAULT_POINT = 0
@@ -50,7 +50,7 @@ class Indivisual < Species
 
       if indiv1.strategy == :hawk && indiv2.strategy == :hawk
         # powerによって勝敗の確率が決まる
-        p = 0.5 + (((indiv1.power - indiv2.power) / Indivisual::Power::MAX) * 0.4)
+        p = 0.5 + (((indiv1.power - indiv2.power) / Gene::Power::MAX) * 0.4)
         if Random.new.rand(1.0) <= p
           indiv1.win!( 100 )
           indiv2.lose!( 35 )
@@ -66,7 +66,7 @@ class Indivisual < Species
         indiv2.win!( 100 )
       elsif indiv1.strategy == :dove && indiv2.strategy == :dove
         # powerによって勝敗の確率が決まる
-        p = 0.5 + (((indiv1.power - indiv2.power) / Indivisual::Power::MAX) * 0.4)
+        p = 0.5 + (((indiv1.power - indiv2.power) / Gene::Power::MAX) * 0.4)
         if Random.new.rand(1.0) <= p
           indiv1.win!( 100-10 )
           indiv2.lose!( 1 )
@@ -81,12 +81,12 @@ class Indivisual < Species
   def initialize( **args )
     # Congenital
     @gene           = args[:gene] || Gene.random
-    @personality    = Personality.new( @gene.personality )
-    @power          = Power.new( @gene.power )
-    @reach          = Reach.new( @gene.reach )
-    @gravity        = Gravity.new( @gene.gravity )
-    @max_territory  = MaxTerritory.new( @gene.max_territory )
-    @life           = Life.new( @gene.life )
+    @personality    = Gene::Personality.new( @gene.personality )
+    @power          = Gene::Power.new( @gene.power )
+    @reach          = Gene::Reach.new( @gene.reach )
+    @gravity        = Gene::Gravity.new( @gene.gravity )
+    @max_territory  = Gene::MaxTerritory.new( @gene.max_territory )
+    @life           = Gene::Life.new( @gene.life )
 
     # Acquired
     @name         = args[:name] || object_id
@@ -203,11 +203,11 @@ class Indivisual < Species
 
     die! if @current_life <= 0
 
+    move!
+
     harvest!
 
     birth! if @point >= 800
-
-    move!
 
     reset_step!
   end

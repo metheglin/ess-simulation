@@ -1,6 +1,6 @@
 # 中心にどの程度強くひきつけられるかを示した数値です.
 # その個体の行動特性となります.
-class Indivisual < Species
+class Gene
   class Gravity < Numeric
 
     SIGMA = 0.5

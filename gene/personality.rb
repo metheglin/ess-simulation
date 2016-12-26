@@ -1,4 +1,4 @@
-class Indivisual < Species
+class Gene
   class Personality
     SIGMA = 0.2
     MIN = 0.0

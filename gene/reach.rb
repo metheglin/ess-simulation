@@ -1,5 +1,5 @@
 # 1度の移動距離平均です.
-class Indivisual < Species
+class Gene
   class Reach < Numeric
 
     SIGMA = 0.3
